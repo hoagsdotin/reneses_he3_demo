@@ -56,6 +56,12 @@ pipeline {
             }
         }
 
+        stage('Make scripts executable') {
+            steps {
+                sh 'chmod +x new_build_system/hoags-build setup.sh'
+            }
+        }
+
         stage('Doctor') {
             steps {
                 sh './new_build_system/hoags-build doctor'
