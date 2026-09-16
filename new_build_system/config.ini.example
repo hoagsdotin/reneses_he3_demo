@@ -1,0 +1,17 @@
+# Copy to config.ini and set paths individually if you need a layout
+# different from the $HOAGS_WORKSPACE default.
+# Precedence: environment > config.ini > default
+
+[workspace]
+root = /srv/builds
+
+[eterna]
+repo = %(root)s/eterna_automation/External
+branch = Eterna_automation
+
+[lotier]
+repo = %(root)s/lotier_automation/External
+branch = Lotier_automation
+
+[devicefiles]
+rl78 = %(root)s/renesas-devicefiles/RL78/Common/DR5F121BC.DVF

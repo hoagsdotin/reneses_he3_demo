@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+#
+# hoags-build (DEMO STUB)
+#
+# This simulates the real pipeline described in the repo README:
+#   git pull -> compile -> convert -> stage into HE3 -> push -> build HE3
+#
+# It does not touch any real toolchain, license, or firmware repo. It
+# exists so the mail-trigger system (mail_listener.py -> SSH ->
+# remote_build_trigger.sh -> this script) can be demoed and proven
+# end-to-end. Swap this file for the real hoags-build when you point
+# the demo at actual RL78/RA hardware and toolchains — nothing else in
+# mail-trigger/ needs to change, since it only ever calls
+# `./hoags-build <command> [platform] [flags]`, exactly like the real one.
+
+set -euo pipefail
+
+COMMAND="${1:-}"
+shift || true
+
+PLATFORMS=()
+BUILD_TYPE="dev"
+CI_MODE=false
+
+# --- parse remaining args the same shape the real tool documents ---------
+while [ $# -gt 0 ]; do
+    case "$1" in
+        eterna|lotier)
+            PLATFORMS+=("$1")
+            ;;
+        --build-type)
+            BUILD_TYPE="$2"
+            shift
+            ;;
+        --ci)
+            CI_MODE=true
+            ;;
+        --no-pull|--no-compile|--skip-firmware)
+            : # accepted, no-op in the stub
+            ;;
+        *)
+            echo "hoags-build: unrecognized argument '$1'" >&2
+            exit 2
+            ;;
+    esac
+    shift
+done
+
+[ ${#PLATFORMS[@]} -eq 0 ] && PLATFORMS=("eterna" "lotier")
+
+log() { echo "[$(date -u +%H:%M:%S)] $*"; }
+
+run_stage() {
+    local stage="$1"
+    log "  -> $stage"
+    sleep 1
+}
+
+case "$COMMAND" in
+    doctor)
+        log "doctor: checking toolchains, device files, credentials..."
+        log "  git ............ OK"
+        log "  arm-none-eabi-gcc  OK (stub)"
+        log "  ccrl ........... OK (stub)"
+        log "  DR5F121BC.DVF .. OK (stub)"
+        log "  build-secrets.env  OK (stub)"
+        log "doctor: all required components present."
+        exit 0
+        ;;
+
+    list)
+        log "list: would build platforms: ${PLATFORMS[*]}"
+        log "list: build-type=$BUILD_TYPE ci=$CI_MODE"
+        exit 0
+        ;;
+
+    firmware|release|he3)
+        for p in "${PLATFORMS[@]}"; do
+            log "=== $p (build-type=$BUILD_TYPE) ==="
+            run_stage "git pull"
+            run_stage "compile"
+            run_stage "convert"
+            if [ "$COMMAND" = "release" ] || [ "$COMMAND" = "he3" ]; then
+                run_stage "stage into HE3 checkout"
+            fi
+            if [ "$COMMAND" = "he3" ]; then
+                run_stage "push to HE3"
+                run_stage "run HE3 build"
+            fi
+            if [ "$CI_MODE" = true ]; then
+                run_stage "upload to S3"
+                run_stage "rewrite OTA manifest"
+            fi
+            log "=== $p complete ==="
+        done
+        log "hoags-build $COMMAND finished successfully."
+        exit 0
+        ;;
+
+    *)
+        echo "usage: hoags-build {doctor|list|firmware|release|he3} [eterna] [lotier] [--build-type dev|test|mp] [--ci]" >&2
+        exit 2
+        ;;
+esac

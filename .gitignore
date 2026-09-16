@@ -1,0 +1,5 @@
+build-secrets.env
+config.ini
+renesas-devicefiles/
+*.log
+build/compile/
