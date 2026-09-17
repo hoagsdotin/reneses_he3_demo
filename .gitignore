@@ -3,3 +3,4 @@ config.ini
 renesas-devicefiles/
 *.log
 build/compile/
+build-output/

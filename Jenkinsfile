@@ -56,6 +56,16 @@ pipeline {
             }
         }
 
+        stage('Make scripts executable') {
+            // Committing from Windows drops the Unix executable bit, so
+            // set it explicitly here rather than relying on git to have
+            // preserved it — this makes the pipeline work regardless of
+            // what OS anyone pushes from.
+            steps {
+                sh 'chmod +x new_build_system/hoags-build setup.sh'
+            }
+        }
+
         stage('Doctor') {
             steps {
                 sh './new_build_system/hoags-build doctor'
@@ -91,7 +101,7 @@ pipeline {
             echo "Build failed — check the 'Build' stage log above."
         }
         always {
-            archiveArtifacts artifacts: '**/*.log', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'build-output/**', allowEmptyArchive: true, fingerprint: true
         }
     }
 }
